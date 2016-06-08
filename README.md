@@ -25,6 +25,7 @@ The following link is a working example of an earlier version of this source, ho
 ___
 
 #### Notes
+* There is currently no "shoot" functionality, if anyone tries.
 * If I remember correctly, I was in the middle of optimizing peer interpolation when I last left off with this project. If anyone has any suggestions on a better way to handle it please open an issue and let me know.
 * If anyone has any feedback on how to improve upon this project I would love to hear what you have to say. Opening an issue would be the best way for now.
 * This project is a mash of several other projects and plugins. When I have more time I will track them down and add them to the bottom of this readme. Author's credit remains in comments.
