@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title></title>
+    <link rel="stylesheet" href="./css/custom.css" media="all"/>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.7/socket.io.min.js"></script>
+
+</head>
+<body>
+        
+    <!-- Pointer lock message -->
+    <div id="blocker">
+        <div id="instructions">
+<!--            <span style="font-size:40px">Basic WASD/Mouse Movement</span>
+            <br/>
+            <span style="font-size:30px">Click to start</span>
+            <br />
+            (W, A, S, D = Move, SPACE = Jump, MOUSE = Look around)-->
+        </div>
+    </div>
+
+    <!-- Include dependencies -->
+    <script src="./libs/three.js"></script>
+    <script src="./src/PointerLockControls.js"></script>
+    <script src="./src/TextureAnimator.js"></script> 
+
+    <script src="./src/Queue.js"></script>
+    <script src="./src/Peer.js"></script>
+    <script src="./src/Client.js"></script>
+    <script src="./src/World.js"></script>
+        
+        
+<script>
+    
+    var world = new World();
+    var client = new Client(world.camera);
+    world.addClient(client.current_state);
+    
+    var socket = io('http://local.serverfps:3000');
+    
+    socket.on('successful_connection', function(netObj){
+        
+        client.id = netObj.id;
+        client.updateState(netObj);
+        
+
+        // Run the main game loop as fast as we can
+        setInterval(function(){
+            
+            var newTime = (+new Date()) / 1000.0;
+            world.renderDeltaTime = (newTime - world.currentTime);
+            world.totalRenderRunTime += world.renderDeltaTime;
+            // Increment world.physicsAccumulator by world.renderDeltaTime. If it takes longer than
+            // a quarter of a second for a frame to render then increment by max frame time of .25.
+            // This prevents spiral of death issue.
+            world.physicsAccumulator += (world.renderDeltaTime > 0.25) ? 0.25 : world.renderDeltaTime;
+            world.currentTime = newTime;
+            
+            // Physics/Game logic 
+            while(world.physicsAccumulator >= world.physicsDeltaTime){
+                
+                world.processServerUpdates(client);
+                
+                client.previous_state = client.current_state.clone();
+                
+                client.processInputs(socket, world.physicsDeltaTime);
+                //world.animatePeers(client);
+
+                world.totalPhysicsRunTime += world.physicsDeltaTime;
+                world.physicsAccumulator -= world.physicsDeltaTime;                
+
+            }
+            
+            // Interpolate client object to remove the stuttering caused by unpredictable number 
+            // of physics loops
+            var alpha = world.physicsAccumulator / world.physicsDeltaTime;
+            
+            var client_physics_state = new THREE.Object3D();
+            client_physics_state = client.current_state.clone();
+            
+            client.current_state.position.lerpVectors(client.previous_state.position, client.current_state.position, alpha);
+            
+            var testQuat = new THREE.Quaternion();
+            THREE.Quaternion.slerp(client.previous_state.quaternion, client.current_state.quaternion, testQuat, alpha);
+            client.current_state.quaternion.copy(testQuat);
+            
+            // Interpolate peers
+            for(var peer_id in world.peers){
+                world.peers[peer_id].interpolate(world.totalRenderRunTime, world.renderDeltaTime, client.current_state.position);
+            }
+            
+            // Render world
+            world.render();
+            
+            // Reset client position and rotation
+            client.current_state.position.copy(client_physics_state.position);
+            client.current_state.quaternion.copy(client_physics_state.quaternion);
+            
+//            // Reset peer position and rotation...highly inefficient...ridiculous even
+//            for(var peer_id in world.peers){
+//                //console.log(world.peers[peer_id].mesh.position);
+//                
+//                world.peers[peer_id].mesh.position.copy(world.peers[peer_id].physics_state.position);
+//                world.peers[peer_id].billboard.position.copy(world.peers[peer_id].physics_state.position);
+//                
+//                world.peers[peer_id].mesh.quaternion.copy(world.peers[peer_id].physics_state.quaternion);
+//            }
+            
+            
+            
+            
+        }, 0);
+
+    });
+    
+    socket.on('new_player_connection', function(netObj){
+        if(netObj.id !== client.id){
+            world.peers[netObj.id] = new Peer(world.scene, netObj);
+        }
+    });
+    
+    socket.on('connected_players', function(netObj){
+        for(var id in netObj){
+            if(id !== client.id){
+                world.peers[id] = new Peer(world.scene, netObj[id]);
+            }
+        }
+    });
+    
+    socket.on('player_disconnect', function(id){
+        world.disconnectPeer(id);
+    });
+    
+    socket.on('server_state', function(server_state){
+        world.queue.send(server_state, world.totalRenderRunTime);
+    });
+	
+	
+	
+    // This function is used to test various things. It is run whenever the enter button
+    // is pressed
+    function testFunction(){
+        
+
+        
+    }
+</script>
+
+        
+<script src="./src/verify_pointerlock.js"></script>
+<script src="./src/controls.js"></script>
+<script src="./src/window_resize.js"></script>
+
+
+</body>
+</html>
