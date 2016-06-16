@@ -1,4 +1,4 @@
-# Socketio Authoritative FPS
+# Open Browser FPS
 This repository is an example of an authoritative game server using node.js, socket.io, and three.js.
 
 ## Installation
