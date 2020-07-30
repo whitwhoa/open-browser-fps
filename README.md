@@ -15,13 +15,6 @@ var socket = io('http://your.host.name:your-socketio-port#');
 7. When the page loads, the command line will log that a new user has connected. You will be able to move around, but you will not see another character.
 8. Open another browser tab and browse to your url. You will now see the character from your other browser tab.
 
-## Screenshots
-![alt text](http://openbrowserfps.com/images/screenshot_001.jpg)
-
-## Live Example
-The following link is a working example of an earlier version of this source, however it functions almost identically to the current project.
-[Click HERE for a live example](http://openbrowserfps.com/build/1/)
-
 ___
 
 #### Notes
