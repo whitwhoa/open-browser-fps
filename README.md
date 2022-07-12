@@ -1,3 +1,5 @@
+# This is horribly outdated and was written many years before I properly understood how to implement these things. Therefore I would not use this as an example # of the "correct" way of doing this. However there could still be some useful bits in there...somewhere...
+
 # Open Browser FPS
 This repository is an example of an authoritative game server using node.js, socket.io, and three.js.
 
